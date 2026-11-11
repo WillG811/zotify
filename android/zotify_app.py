@@ -145,8 +145,8 @@ PAGE = '''<!doctype html>
 <a id="login" class="btn" target="_blank">Iniciar sesion en Spotify</a>
 <textarea id="urls" placeholder="Pega enlaces de Spotify (canciones, albumes, playlists, artistas), uno por linea"></textarea>
 <div class="row">
-  <label>Formato <select id="fmt"><option>mp3</option><option>ogg</option><option>m4a</option></select></label>
-  <label><input type="checkbox" id="rt"> Tiempo real (menos riesgo de ban)</label>
+  <label>Formato <select id="fmt"><option value="ogg">ogg (mejor calidad)</option><option>mp3</option><option>m4a</option></select></label>
+  <label><input type="checkbox" id="rt" checked> Tiempo real (menos riesgo de ban)</label>
 </div>
 <button id="go" onclick="start('urls')">Descargar enlaces</button>
 <button id="liked" class="alt" onclick="start('liked')">Descargar mis canciones que me gustan</button>
@@ -209,7 +209,7 @@ class Handler(BaseHTTPRequestHandler):
             body = {}
         error = None
         if self.path == '/api/start':
-            fmt = body.get('fmt') if body.get('fmt') in ('mp3', 'ogg', 'm4a') else 'mp3'
+            fmt = body.get('fmt') if body.get('fmt') in ('mp3', 'ogg', 'm4a') else 'ogg'
             error = Job.start(body.get('mode'), body.get('urls', ''), fmt, bool(body.get('real_time')))
         elif self.path == '/api/stop':
             Job.stop()
