@@ -31,8 +31,11 @@ def get_playlist_songs(playlist_id):
     limit = 100
 
     while True:
-        resp = Zotify.invoke_url_with_params(f'{PLAYLISTS_URL}/{playlist_id}/tracks', limit=limit, offset=offset)
+        resp = Zotify.invoke_url_with_params(f'{PLAYLISTS_URL}/{playlist_id}/items', limit=limit, offset=offset)
         offset += limit
+        for song in resp[ITEMS]:
+            if 'item' in song:
+                song[TRACK] = song['item']
         songs.extend(resp[ITEMS])
         if len(resp[ITEMS]) < limit:
             break

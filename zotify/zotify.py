@@ -85,7 +85,10 @@ class Zotify:
     def invoke_url_with_params(cls, url, limit, offset, **kwargs):
         headers, params = cls.get_auth_header_and_params(limit=limit, offset=offset)
         params.update(kwargs)
-        return requests.get(url, headers=headers, params=params).json()
+        resp = requests.get(url, headers=headers, params=params).json()
+        if 'error' in resp:
+            raise RuntimeError(f"Spotify API Error ({resp['error'].get('status')}): {resp['error'].get('message')} [{url}]")
+        return resp
 
     @classmethod
     def invoke_url(cls, url, tryCount=0):
