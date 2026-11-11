@@ -15,6 +15,10 @@ from zotify.config import Config
 OAUTH_REDIRECT_URL = 'http://127.0.0.1:5588/login'
 OAUTH_SUCCESS_PAGE = '<h2>Login OK. You can close this tab.</h2>'
 
+RATE_LIMIT_FIRST_WAIT = 10
+RATE_LIMIT_MAX_WAIT = 600
+RATE_LIMIT_MAX_RETRIES = 10
+
 class Zotify:    
     SESSION: Session = None
     DOWNLOAD_QUALITY = None
@@ -82,10 +86,29 @@ class Zotify:
         }, {LIMIT: limit, OFFSET: offset}
 
     @classmethod
+    def api_get(cls, url, headers, params=None):
+        """ GET that waits and retries when Spotify answers 429 (rate limited) """
+        # we need to import that here, otherwise we will get circular imports!
+        from zotify.termoutput import Printer, PrintChannel
+        wait = RATE_LIMIT_FIRST_WAIT
+        for attempt in range(RATE_LIMIT_MAX_RETRIES):
+            response = requests.get(url, headers=headers, params=params)
+            if response.status_code != 429:
+                return response
+            retry_after = response.headers.get('Retry-After', '')
+            delay = int(retry_after) + 1 if retry_after.isdigit() else wait
+            if delay > RATE_LIMIT_MAX_WAIT:
+                raise RuntimeError(f'Spotify rate limit: asked to wait {delay}s, giving up. Try again later.')
+            Printer.print(PrintChannel.WARNINGS, f'Spotify rate limit (429), waiting {delay}s ({attempt + 1}/{RATE_LIMIT_MAX_RETRIES})...')
+            time.sleep(delay)
+            wait = min(wait * 2, RATE_LIMIT_MAX_WAIT)
+        return response
+
+    @classmethod
     def invoke_url_with_params(cls, url, limit, offset, **kwargs):
         headers, params = cls.get_auth_header_and_params(limit=limit, offset=offset)
         params.update(kwargs)
-        resp = requests.get(url, headers=headers, params=params).json()
+        resp = cls.api_get(url, headers, params).json()
         if 'error' in resp:
             raise RuntimeError(f"Spotify API Error ({resp['error'].get('status')}): {resp['error'].get('message')} [{url}]")
         return resp
@@ -95,7 +118,7 @@ class Zotify:
         # we need to import that here, otherwise we will get circular imports!
         from zotify.termoutput import Printer, PrintChannel
         headers = cls.get_auth_header()
-        response = requests.get(url, headers=headers)
+        response = cls.api_get(url, headers)
         responsetext = response.text
         try:
             responsejson = response.json()
