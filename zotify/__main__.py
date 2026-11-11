@@ -19,12 +19,6 @@ def main():
     parser.add_argument('--config-location',
                         type=str,
                         help='Specify the zconfig.json location')
-    parser.add_argument('--username',
-                        type=str,
-                        help='Account username')
-    parser.add_argument('--password',
-                        type=str,
-                        help='Account password')
     group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument('urls',
                        type=str,

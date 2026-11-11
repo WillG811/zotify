@@ -86,6 +86,7 @@ class Config:
         system_paths = {
             'win32': Path.home() / 'AppData/Roaming/Zotify',
             'linux': Path.home() / '.config/zotify',
+            'android': Path.home() / '.config/zotify',
             'darwin': Path.home() / 'Library/Application Support/Zotify'
         }
         if sys.platform not in system_paths:
@@ -223,6 +224,7 @@ class Config:
             system_paths = {
                 'win32': Path.home() / 'AppData/Roaming/Zotify',
                 'linux': Path.home() / '.local/share/zotify',
+                'android': Path.home() / '.local/share/zotify',
                 'darwin': Path.home() / 'Library/Application Support/Zotify'
             }
             if sys.platform not in system_paths:
@@ -244,6 +246,7 @@ class Config:
             system_paths = {
                 'win32': Path.home() / 'AppData/Roaming/Zotify',
                 'linux': Path.home() / '.local/share/zotify',
+                'android': Path.home() / '.local/share/zotify',
                 'darwin': Path.home() / 'Library/Application Support/Zotify'
             }
             if sys.platform not in system_paths:

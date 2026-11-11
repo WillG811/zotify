@@ -1,15 +1,19 @@
 import json
 from pathlib import Path
-from pwinput import pwinput
 import time
 import requests
 from librespot.audio.decoders import VorbisOnlyAudioQuality
 from librespot.core import Session
+from librespot.mercury import MercuryRequests
+from librespot.oauth import OAuth
 
 from zotify.const import TYPE, \
     PREMIUM, USER_READ_EMAIL, OFFSET, LIMIT, \
     PLAYLIST_READ_PRIVATE, USER_LIBRARY_READ, USER_FOLLOW_READ
 from zotify.config import Config
+
+OAUTH_REDIRECT_URL = 'http://127.0.0.1:5588/login'
+OAUTH_SUCCESS_PAGE = '<h2>Login OK. You can close this tab.</h2>'
 
 class Zotify:    
     SESSION: Session = None
@@ -22,9 +26,9 @@ class Zotify:
 
     @classmethod
     def login(cls, args):
-        """ Authenticates with Spotify and saves credentials to a file """
+        """ Authenticates with Spotify via OAuth and saves credentials to a file """
 
-        cred_location = Config.get_credentials_location()
+        cred_location = str(Config.get_credentials_location())
 
         if Path(cred_location).is_file():
             try:
@@ -33,20 +37,21 @@ class Zotify:
                 return
             except RuntimeError:
                 pass
-        while True:
-            user_name = args.username if args.username else ''
-            while len(user_name) == 0:
-                user_name = input('Username: ')
-            password = args.password if args.password else pwinput(prompt='Password: ', mask='*')
-            try:
-                if Config.get_save_credentials():
-                    conf = Session.Configuration.Builder().set_stored_credential_file(cred_location).build()
-                else:
-                    conf = Session.Configuration.Builder().set_store_credentials(False).build()
-                cls.SESSION = Session.Builder(conf).user_pass(user_name, password).create()
-                return
-            except RuntimeError:
-                pass
+
+        if Config.get_save_credentials():
+            conf = Session.Configuration.Builder().set_stored_credential_file(cred_location).build()
+        else:
+            conf = Session.Configuration.Builder().set_store_credentials(False).build()
+        builder = Session.Builder(conf)
+        builder.login_credentials = OAuth(
+            MercuryRequests.keymaster_client_id, OAUTH_REDIRECT_URL, cls.print_oauth_url
+        ).set_success_page_content(OAUTH_SUCCESS_PAGE).flow()
+        cls.SESSION = builder.create()
+
+    @staticmethod
+    def print_oauth_url(url):
+        print(f'OAUTH_URL {url}', flush=True)
+        print('Open the link above in your browser to log in to Spotify.', flush=True)
 
     @classmethod
     def get_content_stream(cls, content_id, quality):
