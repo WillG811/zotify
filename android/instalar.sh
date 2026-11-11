@@ -12,6 +12,7 @@ sleep 3
 
 echo "== Paquetes de Termux =="
 pkg update -y
+yes | pkg upgrade -y -o Dpkg::Options::="--force-confnew"
 pkg install -y python ffmpeg git python-pillow clang
 
 echo "== Zotify =="
